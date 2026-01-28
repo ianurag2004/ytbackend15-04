@@ -124,7 +124,61 @@ const getAllDetails = async(req, res) => {
           foreignField : "video_id",
           as : "stats"
         }
+      },
+      // stage 5
+
+      {
+        // operaiton name
+      $addFields: {
+        // new field name - your choice
+          videos: {
+            // map operation - iterate
+            $map: {
+              // iterate on videos array
+              input: "$videos",
+              // videos : [{v1}, {v2}, {v3}, {v4}]
+              // stats : [{s1}, {s2}, {s3}, {s4}]
+              as: "video",
+
+              /*
+               {
+                  ...video,
+
+               }
+              */
+              in: {
+                $mergeObjects: [
+                  "$$video",
+                  {
+                    stats: {
+                      $arrayElemAt: [
+                        {
+                          //  // stats : [{s1}, {s2}, {s3}, {s4}]
+                          $filter: {
+                            input: "$stats",
+                            as: "stat",
+                            cond: { $eq: ["$$stat.video_id", "$$video._id"] }
+                          }
+                        },
+                        0
+                      ]
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        }
+      },
+
+      {
+        $project : {
+          stats: 0
+        }
       }
+  
+      
+      
 
      ])
 
