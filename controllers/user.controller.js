@@ -23,7 +23,34 @@ const createUser = async(req, res) => {
     }
 }
 
+// function to get users
+
+const getUsers = async(req, res) => {
+    try{
+       // Pagination
+
+       const page = parseInt(req.query.page);
+       const limit = parseInt(req.query.limit);
+
+       const skip = (page - 1) * limit;
+
+       // pipeline
+
+       const data = await User.aggregate([
+        // stage 1
+        {
+         $skip : skip
+        },
+        {
+          $limit : limit
+        }
+       ])
+
+    }catch(err){
+      console.log("err", err)
+    }
+}
 
 
 
-module.exports = {createUser}
+module.exports = {createUser, getUsers}
