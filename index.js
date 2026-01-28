@@ -5,7 +5,8 @@ const mongoose = require("mongoose");
 // user router
 
 const userRouter = require("./routes/user.routes")
-const channelRouter = require("./routes/channel.route")
+const channelRouter = require("./routes/channel.route");
+const videoRouter =require("./routes/video.routes")
 
 const port = process.env.PORT || 4000
 
@@ -22,9 +23,14 @@ mongoose.connect(process.env.MONGO_URI)
 
 // endpoints
 
+// user
 app.use("/api", userRouter)
 
+// channel
 app.use("/api/channel", channelRouter)
+
+// video
+app.use("/api/video", videoRouter)
 
 app.listen(port, () => {
     console.log("server is running on port " + port)

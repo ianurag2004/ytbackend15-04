@@ -3,7 +3,7 @@ const mongoose = require("mongoose");
 // video stats schema
 
 const VideoStatsSchema = new mongoose.Schema({
-    ref : {
+    video_id : {
       type : mongoose.Schema.Types.ObjectId,
       ref : "Video"
     },

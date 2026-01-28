@@ -31,14 +31,17 @@ const createChannel = async (req, res) => {
 
 const getAccountDetails = async(req, res) => {
    try{
-        const {userId} = req.body
+        const {ownerId} = req.body
+
+        const userDetails = await User.findById(ownerId)
+
         // 6970810b064d6fe8012bc4d7
        // logic
        const data = await User.aggregate([
         // stage 1
         {
            $match : {
-            _id : new mongoose.Types.ObjectId(userId)
+            _id : new mongoose.Types.ObjectId(ownerId)
            }
         }, 
         // stage 2
@@ -58,16 +61,17 @@ const getAccountDetails = async(req, res) => {
                 path : "$details"
             }
         },
-
         //  stage 4
-      {
-    // $project: {
-  
-    // },
-  },
+
+    {
+      $project : {
+        channelName : "$details.channelName"
+      }
+    }
+
        ])
 
-       return res.status(200).json({message : "data fetched",  data})
+       return res.status(200).json({message : "data fetched",  data, userDetails})
 
     }catch(err){
         console.log("err", err)
@@ -75,5 +79,176 @@ const getAccountDetails = async(req, res) => {
 }
 
 
+// controller to get user details, channel, video, video stats
 
-module.exports = {createChannel, getAccountDetails}
+const getAllDetails = async(req, res) => {
+  try{
+     const {userId} = req.params;
+
+     const data = await User.aggregate([
+       // logic
+       // stage 1 - get user by id
+
+       {
+        $match : {
+          _id : new mongoose.Types.ObjectId(userId)
+        }
+       },
+
+      //  stage 2 -> perform join between two collections -> users and channels
+      {
+        $lookup : {
+          from : "channels",
+          localField : "_id",
+          foreignField : "ownerId",
+          as : "channel"
+        }
+      },
+
+      // stage 3 -> get video data
+
+      {
+        $lookup : {
+          from : "videos",
+          localField : "channel._id",
+          foreignField : "channelId",
+          as : "videos"
+        }
+      },
+
+      // stage 4
+      {
+        $lookup : {
+          from : "videostats",
+          localField : "videos._id",
+          foreignField : "video_id",
+          as : "stats"
+        }
+      }
+
+     ])
+
+     return res.status(200).json({message : "All details fetched successfully", data})
+  }catch(err){
+    console.log("err", err)
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// const getUserFullProfile = async (req, res) => {
+//   try {
+//     const {userId} = req.body;
+
+//     const data = await User.aggregate([
+//       {
+//         $match: {
+//           _id: new mongoose.Types.ObjectId(userId)
+//         }
+//       },
+
+//       // Join Channel
+//       {
+//         $lookup: {
+//           from: "channels",
+//           localField: "_id",
+//           foreignField: "ownerId",
+//           as: "channel"
+//         }
+//       },
+
+//       { $unwind: "$channel" },
+
+//       // Join Videos
+//       {
+//         $lookup: {
+//           from: "videos",
+//           localField: "channel._id",
+//           foreignField: "channelId",
+//           as: "videos"
+//         }
+//       },
+
+//       // Join VideoStats for each video
+//       {
+//         $lookup: {
+//           from: "videostats",
+//           localField: "videos._id",
+//           foreignField: "ref",
+//           as: "videoStats"
+//         }
+//       },
+
+//       // Merge stats into videos
+//       {
+//         $addFields: {
+//           videos: {
+//             $map: {
+//               input: "$videos",
+//               as: "video",
+//               in: {
+//                 $mergeObjects: [
+//                   "$$video",
+//                   {
+//                     stats: {
+//                       $arrayElemAt: [
+//                         {
+//                           $filter: {
+//                             input: "$videoStats",
+//                             as: "stat",
+//                             cond: { $eq: ["$$stat.ref", "$$video._id"] }
+//                           }
+//                         },
+//                         0
+//                       ]
+//                     }
+//                   }
+//                 ]
+//               }
+//             }
+//           }
+//         }
+//       },
+
+//       // Remove temp field
+//       // {
+//       //   $project: {
+//       //     videoStats: 0
+//       //   }
+//       // }
+//     ]);
+
+//     res.json({
+//       success: true,
+//       data
+//     });
+
+//   } catch (err) {
+//     res.status(500).json({ error: err.message });
+//   }
+// };
+
+
+module.exports = {createChannel, getAccountDetails, getAllDetails}
