@@ -28,29 +28,32 @@ const createUser = async(req, res) => {
 const getUsers = async(req, res) => {
     try{
        // Pagination
+       // get page number
+       const page = parseInt(req.query.page) || 1;
+       // get the set limit
+       const limit = parseInt(req.query.limit) || 3;
 
-       const page = parseInt(req.query.page);
-       const limit = parseInt(req.query.limit);
-
+        // how many docs/users to skip
        const skip = (page - 1) * limit;
-
        // pipeline
-
        const data = await User.aggregate([
         // stage 1
         {
          $skip : skip
         },
+        // stage 2
         {
           $limit : limit
         }
        ])
 
+       // return response
+       // 200 - success (OK)
+       return res.status(200).json({message : "fetched users", data})
+
     }catch(err){
       console.log("err", err)
     }
 }
-
-
 
 module.exports = {createUser, getUsers}
