@@ -39,9 +39,15 @@ const getUsers = async(req, res) => {
        const data = await User.aggregate([
         // stage 1
         {
-         $skip : skip
+           $sort : {
+             createdAt : -1 // recently created users will come at top
+           }
         },
         // stage 2
+        {
+         $skip : skip
+        },
+        // stage 3
         {
           $limit : limit
         }

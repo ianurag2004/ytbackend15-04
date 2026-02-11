@@ -33,6 +33,4 @@ const publishVideo = async(req, res) => {
 
 // exporting the controller
 
-
-
 module.exports = {publishVideo}
