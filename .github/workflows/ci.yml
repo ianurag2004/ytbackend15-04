@@ -16,7 +16,7 @@ jobs:
     # server
     runs-on: ubuntu-latest
 
-    # versions you want to test your app on
+    # versions you want to test your app o
     strategy:
       matrix:
         node-version: [18.x, 20.x, 22.x]
@@ -57,4 +57,7 @@ jobs:
         # actual command
 
     - name : Test Command
-      run: echo "Testing APP"
+      run: npm test
+
+    - name : Test cases ran successfully
+      run: echo "Testing done successfully!"

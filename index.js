@@ -11,7 +11,6 @@ const videoRouter =require("./routes/video.routes")
 const port = process.env.PORT || 4000
 
 const app = express();
-
 // parsing
 
 app.use(express.json())
