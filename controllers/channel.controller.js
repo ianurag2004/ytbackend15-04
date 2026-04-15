@@ -1,6 +1,10 @@
 const { default: mongoose } = require("mongoose");
 const Channel = require("../models/Channel.model");
 const User = require("../models/User.model");
+// require redis
+
+const redis = require("../utils/redisClient");
+
 
 // api to create channel
 const createChannel = async (req, res) => {
@@ -29,61 +33,91 @@ const createChannel = async (req, res) => {
 
 // get account details
 
-const getAccountDetails = async(req, res) => {
-   try{
-        const {ownerId} = req.body
+const getAccountDetails = async (req, res) => {
+  try {
+    const { ownerId } = req.body;
 
-        const userDetails = await User.findById(ownerId)
+    // step 1 -> create a key
 
-        // 6970810b064d6fe8012bc4d7
-       // logic
-       const data = await User.aggregate([
-        // stage 1
-        {
-           $match : {
-            _id : new mongoose.Types.ObjectId(ownerId)
-           }
-        }, 
-        // stage 2
-        {
-            $lookup : {
-                from : "channels",
-                localField : "_id",
-                foreignField : "ownerId",
-                as : "details"
-            }
-        },
+    const cacheKey = `account:${ownerId}`;
+    // actual key =   account:32674535364t678
 
-        // stage 3
+    // check if the value is added in the key
 
-        {
-            $unwind : {
-                path : "$details"
-            }
-        },
-        //  stage 4
+    try{
+      // getting value from key
+      const cachedData = await redis.get(cacheKey);
 
-    {
-      $project : {
-        channelName : "$details.channelName"
+      // if value is there in the key
+      if(cachedData){
+        const parsedData = JSON.parse(cachedData);
+        return res.status(200).json({message : "Data fetched from Redis DB", parsedData})
       }
-    }
-
-       ])
-
-       return res.status(200).json({message : "data fetched",  data, userDetails})
-
     }catch(err){
-        console.log("err", err)
+      console.log("error getting value", err)
     }
-}
 
+    const userDetails = await User.findById(ownerId);
+    const data = await User.aggregate([
+      {
+        $match: {
+          _id: new mongoose.Types.ObjectId(ownerId)
+        }
+      },
+      {
+        $lookup: {
+          from: "channels",
+          localField: "_id",
+          foreignField: "ownerId",
+          as: "details"
+        }
+      },
+      {
+        $unwind: { path: "$details" }
+      },
+      {
+        $project: { channelName: "$details.channelName" }
+      }
+    ]);
+
+    // store result in redis
+
+    await redis.set(cacheKey, JSON.stringify({data, userDetails}), "EX", 100)
+
+    return res.status(200).json({ message: "data fetched", data, userDetails });
+  } catch (err) {
+    console.log("err", err);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+};
 
 // controller to get user details, channel, video, video stats
 
 const getAllDetails = async(req, res) => {
   try{
      const {userId} = req.params;
+
+
+    const rediskey = 'all_details:${userId}';
+
+    try{
+      const cachedData = await redis.get(rediskey);
+
+      if(rediskey){
+        const parsedData = JSON.parse(cachedData);
+        return res.status(200).json({message : "Data fetched from Redis DB", parsedData})
+      }
+    }catch(err){
+      console.log("error getting value", err)
+    }
+
+
+
+
+
+
+
+
 
      const data = await User.aggregate([
        // logic
@@ -176,9 +210,6 @@ const getAllDetails = async(req, res) => {
           stats: 0
         }
       }
-  
-      
-      
 
      ])
 
@@ -187,30 +218,6 @@ const getAllDetails = async(req, res) => {
     console.log("err", err)
   }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 // const getUserFullProfile = async (req, res) => {
 //   try {

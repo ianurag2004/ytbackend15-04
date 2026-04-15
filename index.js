@@ -15,10 +15,10 @@ const app = express();
 
 app.use(express.json())
 
-// mongoose.connect(process.env.MONGO_URI)
-// .then(() => {
-//   console.log("DB is connected")
-// }).catch((err) => console.log("err", err.message))
+mongoose.connect(process.env.MONGO_URI)
+.then(() => {
+  console.log("DB is connected")
+}).catch((err) => console.log("err", err.message))
 
 // endpoints
 
