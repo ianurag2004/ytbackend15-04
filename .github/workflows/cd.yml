@@ -46,3 +46,29 @@ jobs:
       run:  docker push nehal524/youtube-backend:latest
 
   
+  aws-deploy:
+
+    # aws server  ec2 instance
+    needs: deploy
+    runs-on: self-hosted
+ 
+    steps:
+        # switch branch - (main)
+    - uses: actions/checkout@v4
+   #step 1
+    - name : pull the latest Docker Image
+      run: docker build -t nehal524/youtube-backend:latest .
+#step 2
+    - name: remove existing container
+      run: docker rm -f youtube-backend || true
+# docker hub - 2367te346tr3t2ewyquert7yer
+    - name: run redis inside container
+      run: docker run -d --name redis redis:latest
+      # run: echo "${{ secrets.DOCKER_HUB_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_HUB_USERNAME }}" --password-stdin
+
+    - name: run redis inside container
+      run: docker run -d --name youtube-backend --link redis:redis -p 5000:5000 nehal524/youtube-backend:latest 
+     
+
+    - name: Run docker container for yt backend
+      run:  docker run -d --name youtube-backend --link redis:redis -p 5000:5000 nehal524/youtube-backend:latest
